@@ -1,166 +1,251 @@
 # Playbook
 
-This reference is for choosing the smallest trustworthy PhpStorm MCP tool for inspections, refactoring, and syntax-aware code search.
+This reference is for choosing the smallest trustworthy PhpStorm MCP tool for PHP project context, inspections, refactoring, syntax-aware search, validation, and on-demand framework or capability overlays.
+
+## Toolset Reality
+
+- The public `mcp-server.html` help page is useful, but it is not an exhaustive inventory of the PHP-oriented toolset exposed by recent PhpStorm 2026.1.x builds.
+- Actual availability depends on IDE version, enabled plugins, and the agent-side allow-list such as `idea_mcp_allowed_tools`.
+- Prefer the tools actually exposed in the current MCP session over any remembered list.
 
 ## Start Here
 
+- The task is non-trivial PHP work: `get_php_project_config` -> `get_composer_dependencies` -> `get_project_modules` / `get_repositories` -> `get_run_configurations`
 - The target is a symbol: `search_symbol` -> `get_symbol_info` -> `read_file`
-- The target is a file path or filename: `find_files_by_name_keyword` or `search_file`
+- The target is a file path or filename: `search_file` or `find_files_by_name_keyword`
 - The target is a plain text fragment: `search_text`
 - The target is a regex pattern: `search_regex`
 - The target is a PHP syntax shape: `search_structural`
 - The task is a file-level problem list: `get_inspections`
 - The task is a symbol rename: `rename_refactoring`
-- The task is a known IDE quick fix: `apply_quick_fix`
-- The task is validation after edits: `get_inspections` -> `build_project`
+- The task is a known inspection-backed fix: `apply_quick_fix`
+- The task is validation after semantic edits: `get_inspections` -> `build_project` -> tests or `execute_run_configuration`
+- The task clearly belongs to a known framework: read the matching file under `references/frameworks/`
+- The task needs database context: read `references/capabilities/database.md`
+- The task is runtime-only and static tools are not enough: read `references/capabilities/debugging.md`
+- The task is a large repeated migration or inspection campaign: read `references/capabilities/custom-inspections.md`
+
+## Bootstrap a PHP Project
+
+Use this workflow before making non-trivial edits.
+
+1. `get_php_project_config`
+2. `get_composer_dependencies`
+3. `get_project_modules`
+4. `get_repositories`
+5. `get_run_configurations`
+6. If needed, `list_directory_tree` or `search_file` for entrypoints and key config files
+
+What this gives you:
+
+- PHP language level versus actual interpreter runtime
+- Available Composer packages and exact versions
+- Monorepo or multi-module boundaries
+- VCS root layout
+- Named validation targets you can run later
+
+Practical rule:
+
+- If you do not know the PHP version, interpreter, or test entrypoint yet, you are not ready to refactor confidently.
+
+## On-Demand Overlays
+
+Keep the base playbook framework-agnostic and capability-light.
+
+Load extra references only when project context or the task gives you clear evidence they are needed.
+
+Framework overlays:
+
+- `references/frameworks/laravel.md`
+
+Capability overlays:
+
+- `references/capabilities/database.md`
+- `references/capabilities/debugging.md`
+- `references/capabilities/custom-inspections.md`
 
 ## Canonical Tool Choice
 
+### Project context
+
+- `get_php_project_config`: first stop for PHP runtime, interpreter, language level, extensions, and debuggers
+- `get_composer_dependencies`: check available packages and exact versions before generating or editing framework code
+- `get_project_modules`: identify modules in multi-module projects
+- `get_project_dependencies`: high-level dependency inventory beyond Composer
+- `get_repositories`: detect VCS roots in monorepos or nested repositories
+- `get_run_configurations`: preferred source for existing validation commands
+
 ### Read and navigate
 
-- `read_file`: default reader; use slices, ranges, or indentation mode for large files.
-- `get_file_text_by_path`: only when the file is short and you want plain text quickly.
-- `open_file_in_editor`: only when a human-visible editor state or IDE action context matters.
-- `get_all_open_file_paths`: useful only when current editor state matters.
+- `read_file`: default reader; use slices, ranges, or indentation mode for large files
+- `get_file_text_by_path`: only when the file is short and you want plain text quickly
+- `open_file_in_editor`: only when a human-visible editor state or IDE action context matters
+- `get_all_open_file_paths`: useful only when current editor state matters
 
 ### Find files
 
-- `find_files_by_name_keyword`: fastest when you know part of a filename.
-- `search_file`: canonical glob-based file search; supports include and exclude path filters.
-- `find_files_by_glob`: acceptable classic glob search when that is the simplest expression.
-- `list_directory_tree`: use for folder layout, not for content search.
+- `search_file`: canonical glob-based file search; supports include and exclude path filters
+- `find_files_by_name_keyword`: fastest when you know part of a filename
+- `find_files_by_glob`: acceptable classic glob search when that is the simplest expression
+- `list_directory_tree`: use for folder layout, not for content search
 
 ### Search code and symbols
 
-- `search_symbol`: default for code identifiers and declarations.
-- `get_symbol_info`: enriches a symbol hit with declaration, signature, docs, and type info.
-- `search_text`: default project-wide text search.
-- `search_regex`: default project-wide regex search.
-- `search_in_files_by_text` and `search_in_files_by_regex`: legacy alternatives when directory-plus-fileMask parameters are more convenient than path globs.
-- `search_structural`: syntax-aware search; prefer it over regex for code migrations or API usage patterns.
-- `get_structural_patterns`: use when you want known-working SSR examples before writing a custom pattern.
+- `search_symbol`: default for code identifiers and declarations
+- `get_symbol_info`: declaration, signature, docs, and inferred type
+- `search_text`: default project-wide text search for strings, config keys, docs, templates, and other non-code references
+- `search_regex`: regex search when semantics do not matter and structural search is not a fit
+- `search_in_files_by_text` and `search_in_files_by_regex`: alternatives when directory plus file mask parameters are more convenient than glob paths
+- `search_structural`: syntax-aware search; prefer it over regex for API migrations or repeated code shapes
+- `get_structural_patterns`: use when you want known-working PHP SSR examples before writing a custom pattern
 
-### Inspect and fix
+### Inspect and refactor
 
-- `get_inspections`: default diagnostic tool. Prefer this whenever you might want to apply quick fixes.
-- `get_file_problems`: lighter read-only diagnostic view; use only when quick fixes are irrelevant.
-- `apply_quick_fix`: requires the exact quick-fix name from `get_inspections`, plus its line and column.
-- `apply_quick_fix` covers inspection-backed quick fixes, not arbitrary `Alt+Enter` intention actions.
-- `reformat_file`: use after logic is stable, not as a discovery step.
-- `build_project`: use after meaningful edits, especially cross-file or refactoring-heavy ones. Prefer `filesToRebuild` over a full rebuild.
+- `get_inspections`: default diagnostic tool whenever quick fixes might matter
+- `get_file_problems`: lighter read-only diagnostics when quick-fix metadata is irrelevant
+- `apply_quick_fix`: requires the exact quick-fix name from `get_inspections`
+- `rename_refactoring`: default for identifiers; do not emulate rename with text replacement
+- `replace_text_in_file`: mechanical edits only after semantic discovery has bounded the target set
+- `search_ide_actions` and `invoke_ide_action`: fallback for refactorings with no dedicated MCP tool
+- `reformat_file`: use after logic is stable, not as a discovery step
 
-## Refactoring Rules
+### Validation and execution
 
-- `rename_refactoring` is the default for identifiers. Do not emulate rename with text replacement.
-- `rename_refactoring` should be treated as code-aware rename. If comments, strings, or text files also matter, audit them separately with `search_text` after the rename.
-- `replace_text_in_file` is for mechanical edits, strings, comments, config keys, or tightly bounded code changes after semantic discovery.
-- `search_structural` plus targeted edit is the default path for repetitive syntax-shaped migrations.
-- `invoke_ide_action` is a fallback for refactorings that have no dedicated MCP tool.
+- `build_project`: structural or compile validation after meaningful edits; prefer targeted files over full rebuilds
+- `execute_run_configuration`: preferred behavior validation when a project already defines the right run target
+- `execute_terminal_command`: last resort when the IDE toolset cannot validate the change or the project relies on CLI-only workflows
+
+## Workflow Recipes
+
+### Investigate a symbol or code path
+
+1. `search_symbol`
+2. `get_symbol_info`
+3. `read_file` around the declaration and a few key usages
+4. `search_text` only for non-code references
+
+### Fix an inspection-driven issue
+
+1. `get_inspections`
+2. If a suitable quick fix exists, use `apply_quick_fix`
+3. Re-run `get_inspections`
+4. `build_project`
+5. If behavior changed, run the nearest tests or `execute_run_configuration`
+
+### Safe rename with post-audit
+
+1. `search_symbol`
+2. `rename_refactoring`
+3. `get_inspections`
+4. `build_project`
+5. `search_text` for comments, strings, config keys, routes, templates, and docs the semantic rename may not cover
+6. Run behavior validation for public APIs and framework entrypoints
+
+### Change signature
+
+1. Inspect the callable and likely call sites
+2. Prefer a dedicated refactoring path if your client exposes one directly
+3. Otherwise use `search_ide_actions` for `ChangeSignature`
+4. `invoke_ide_action` only when the context is straightforward and the action is likely to finish unattended
+5. Re-run `get_inspections`
+6. `build_project`
+7. Run tests or `execute_run_configuration`
+
+### Safe delete
+
+1. Inspect declaration and usages
+2. `search_ide_actions` for `SafeDelete`
+3. `invoke_ide_action` only when the context is simple
+4. Re-run `get_inspections`
+5. `build_project`
+6. Run tests or the nearest validation target
+
+### Syntax-aware migration or cleanup
+
+1. `search_structural`
+2. Inspect representative hits with `read_file`
+3. If repetition is high, consider `references/capabilities/custom-inspections.md`
+4. Apply the smallest edit that preserves behavior
+5. Re-run inspections and build
+6. Run behavior validation for public or framework-facing changes
+
+### Project-wide inspection or migration campaign
+
+1. Bootstrap the project context
+2. Define the scope narrowly
+3. Start with a representative sample
+4. Prefer reusable patterns or inspection-driven fixes over one-off edits
+5. Apply the change set
+6. Re-run inspections on touched files
+7. Build touched files
+8. Run the relevant run configuration or test command
+
+### Framework-specific investigation
+
+1. Detect the framework from Composer packages or recognizable project files
+2. Read the matching file under `references/frameworks/`
+3. Follow that overlay for discovery
+4. Return to the core edit and validation workflow afterward
+
+## Validation Ladders
+
+Use the narrowest validation that can still catch the likely failure mode.
+
+### Static-only edit
+
+- `get_inspections`
+
+### Single-file semantic edit
+
+- `get_inspections` -> `build_project`
+
+### Cross-file rename or refactor
+
+- `get_inspections` on touched files -> `build_project` on touched files -> `search_text` audit for non-code references
+
+### Behavior change
+
+- `get_inspections` -> `build_project` -> `execute_run_configuration` or project test command
+
+### Database-affecting change
+
+- Static validation first
+- Read `references/capabilities/database.md`
+- Run mutating SQL only when the user explicitly wants it and the target connection is safe
 
 ## IDE Action Fallback
 
-Always search for the action ID first with `search_ide_actions`. Then call `invoke_ide_action` with `filePaths` context when possible.
+Always search for the action ID first with `search_ide_actions`.
 
-High-value action IDs available in the current IDE:
+High-value actions for PHP work:
 
-- `RenameElement`: fallback rename action; use `rename_refactoring` first when possible
-- `ChangeSignature`: can rename a callable, change return type, add or remove parameters, reorder parameters, and update call sites; often dialog-driven
-- `SafeDelete`: usage-aware delete; likely to open usages or confirmation dialogs
-- `ExtractMethod`: usually needs a precise editor selection; unreliable unattended
-- `Inline`: inline method or variable; context-sensitive and often interactive
-- `PhpExtractClassAction`: PHP extract-class refactoring; likely interactive
-- `ExtractInterface`: likely interactive
-- `ExtractSuperclass`: likely interactive
-- `ExtractModule`: likely interactive
-- `ExtractInclude`: extract selected code to an include file; selection-dependent
-- `Unwrap`: can be useful for safe removal of wrapping constructs
-- `OptimizeImports`: safe cleanup after edits
-- `Refactorings.QuickListPopupAction`: opens the context refactoring popup; useful for discovery, not automation
+- `ChangeSignature`
+- `SafeDelete`
+- `RenameElement`
+- `ExtractMethod`
+- `Inline`
+- `ExtractInterface`
+- `ExtractSuperclass`
+- `PhpExtractClassAction`
+- `Unwrap`
+- `OptimizeImports`
 
 Practical rule:
 
 - Use `invoke_ide_action` confidently for non-dialog cleanup actions.
 - Use it cautiously for dialog-heavy refactorings.
 - If an action depends on editor selection or modal input, prefer a dedicated MCP tool or a smaller manual edit followed by inspections.
-- If you need a full UI-driven refactoring preview or conflict resolution flow, do not assume `invoke_ide_action` can drive it unattended.
-
-## Inspection Workflow
-
-1. Run `get_inspections` on the touched file.
-2. If needed, narrow with `minSeverity`: `ERROR`, `WARNING`, `WEAK_WARNING`, or `INFORMATION`.
-3. If a suitable quick fix exists, use `apply_quick_fix` with the exact quick-fix name.
-4. Re-run `get_inspections`.
-5. If the edit changed executable code, run `build_project` on the touched files.
-
-Use `get_file_problems` only when you want a quicker read-only error list and do not need quick-fix metadata.
-
-## Structural Search Recipes
-
-Use `fileType: PHP` and a narrow directory scope whenever possible.
-
-Good starting patterns for PHP:
-
-- Instance method call: `$a$->$b$()`
-- Static method call: `$a$::$b$()`
-- Constructor call: `new $b$()`
-- Assignment: `$a$ = $b$`
-- Field access: `$a$->$b$`
-- Inheritance: `class $a$ extends $b$ {}`
-- Interface implementation: `class $a$ implements $b$ {}`
-- Instance check: `$a$ instanceof $b$`
-
-Useful constraints:
-
-- `regex`: restrict a variable by text, for example method names like `^get.*`
-- `invertRegex`: invert the regex condition
-- `minCount` and `maxCount`: bound repeated variables
-- `exprType`: constrain expression types where supported
-
-Known caveats from the MCP tool description:
-
-- Some PHP modifiers and complex nested patterns may not match as you first expect.
-- Prefer a built-in pattern from `get_structural_patterns` when one is close.
-- Validate a few hits manually before making repeated edits.
-
-Workflow:
-
-1. Start from a built-in pattern from `get_structural_patterns` if one is close.
-2. Search a narrow area first.
-3. Inspect several hits with `read_file`.
-4. Apply the smallest edit that preserves behavior.
-5. Re-run inspections.
-
-## Custom Inspection Authoring
-
-These tools are not for routine editing. Use them only when you need to author or validate a custom inspection script.
-
-- `generate_inspection_kts_api`: reference for the inspection KTS API
-- `generate_inspection_kts_examples`: starter examples
-- `generate_psi_tree`: understand the PSI shape of a PHP, Java, or Kotlin snippet
-- `run_inspection_kts`: compile and run a custom inspection against a target file
-
-## Validation Ladder
-
-Use the narrowest validation that can still catch the likely failure mode.
-
-- Single-file fix: `get_inspections`
-- Single-file semantic edit or quick fix: `get_inspections` -> `build_project` for that file
-- Cross-file rename or repeated migration: `get_inspections` on touched files -> `build_project` on touched files
-- Only if IDE tools are insufficient: `execute_run_configuration` or `execute_terminal_command`
 
 ## Anti-patterns
 
-- Starting with `search_regex` when `search_symbol` would identify the declaration and references semantically
+- Starting with `search_regex` when `search_symbol` or `search_structural` would be safer
 - Using `replace_text_in_file` to rename a symbol
+- Stopping at `build_project` after a behavior change
+- Ignoring strings, templates, config keys, and docs after a semantic refactor
 - Treating `apply_quick_fix` as a generic substitute for all intention actions
-- Running `build_project` before you have looked at `get_inspections`
-- Reading a very large file whole when `read_file` can slice exactly what you need
-- Depending on `invoke_ide_action` for selection-heavy extract or inline refactorings without a fallback plan
+- Depending on `invoke_ide_action` for dialog-heavy refactorings without a fallback plan
+- Loading framework or capability overlays before they are actually needed
+- Trusting the public docs page as an exhaustive tool inventory for 2026.1 builds
+- Running mutating SQL without a safe connection and explicit user intent
+- Starting a debugger before cheaper static or behavioral validation has failed
 - Reformatting too early and hiding the meaningful diff
-
-## Usually Irrelevant for This Skill
-
-- `laravel_idea_*` tools: ignore unless the task is explicitly Laravel-specific
-- `execute_terminal_command`: last resort, not a first-line MCP choice
-- `execute_run_configuration`: use when a named IDE run configuration is the intended validation mechanism
-- `create_new_file`: fine for creating files, but not relevant to inspections or refactoring workflows
