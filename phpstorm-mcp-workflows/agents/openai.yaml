@@ -1,0 +1,13 @@
+interface:
+  display_name: "PhpStorm MCP Workflows"
+  short_description: "Use PhpStorm MCP for inspections and refactoring"
+  default_prompt: "Use $phpstorm-mcp-workflows to solve this through PhpStorm MCP navigation, inspections, quick fixes, semantic search, and safe refactoring."
+
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "phpstorm"
+      description: "JetBrains PhpStorm MCP server"
+
+policy:
+  allow_implicit_invocation: true
