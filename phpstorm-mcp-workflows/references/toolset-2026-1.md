@@ -1,91 +1,60 @@
 # PhpStorm MCP Toolset Notes for 2026.1
 
-This repository was reviewed against PhpStorm 2026.1.1, build `PS-261.23567.149`.
+This reference is observational. It helps an agent reason about PhpStorm MCP capability drift, but it is not the normative workflow. The normative workflow lives in `../SKILL.md`.
 
-## What Was Compared
+## Review Metadata
 
-Three sources were used:
+- Tested IDE: PhpStorm 2026.1.1
+- Tested build: `PS-261.23567.149`
+- Session capture date: 2026-04-27
+- Public baseline: JetBrains PhpStorm MCP Server documentation and PhpStorm 2026.1 release notes
+- Rule for agents: prefer the tools actually exposed in the current MCP session over this file
 
-1. The public help page for the integrated MCP server: `mcp-server.html`
-2. The PhpStorm 2026.1 release notes
-3. The toolset exposed by the tested PhpStorm MCP environment
+## Evidence Levels
 
-## Main Finding
+Use these categories when reading tool claims:
 
-The public help page is now a much better baseline than it was in early 2026, but it still does not read like a complete PHP-oriented tool inventory for recent PhpStorm 2026.1.x sessions.
+1. **Public baseline**: described by JetBrains public documentation or release notes.
+2. **Observed in tested session**: exposed by the tested PhpStorm MCP environment used for this repository.
+3. **Optional capability**: may appear only with specific plugins, IDE builds, project types, configured interpreters, debug support, database support, or MCP allow-list settings.
 
-The help page covers the integrated server setup and a meaningful supported-tools list, but current PhpStorm MCP environments can expose additional PHP-specific capabilities for:
+Do not treat optional tools as guaranteed. If a tool is missing, use the fallback guidance in `playbook.md` and the base skill.
 
-- inspections and quick fixes
-- PHP project bootstrap and environment discovery
-- structural search for PHP
-- IDE action discovery and invocation
-- optional Xdebug-assisted debugging
-- optional framework-aware workflows such as Laravel Idea integration
+## Public Baseline
 
-In practice, this means a current skill should use the public docs as the baseline and the actually exposed toolset as the source of truth.
+JetBrains' public PhpStorm MCP Server documentation covers integrated server setup, client configuration, and supported IDE/MCP capabilities across file, project, search, refactoring, execution, and database-oriented workflows.
 
-## Publicly Documented on `mcp-server.html`
+PhpStorm 2026.1 release notes also describe stronger AI-agent support, including PHP-focused agent guidance, inspections and quick fixes, structural search, IDE actions, and Laravel Idea MCP integration.
 
-The current help page documents the integrated MCP server, client setup, and a supported-tools list that includes core file, project, search, refactoring, execution, and database tools.
+These public sources justify the repository's general MCP-first workflow, but they should not be read as a complete inventory for every possible PhpStorm MCP session.
 
-That public page is sufficient to explain how the built-in server works and to justify the general MCP workflow, but it still does not enumerate every PHP-specific tool family that can appear in a recent PhpStorm session.
+## Observed in the Tested Session
 
-## Confirmed in Recent 2026.1 Sessions
-
-### General MCP tools
-
-Recent PhpStorm MCP sessions expose a broad general toolset including tools such as:
+The tested session exposed general project and file tools such as:
 
 - `create_new_file`, `find_files_by_glob`, `find_files_by_name_keyword`, `get_all_open_file_paths`, `get_file_problems`, `get_project_dependencies`, `get_project_modules`, `get_repositories`, `get_run_configurations`, `list_directory_tree`, `open_file_in_editor`, `read_file`, `reformat_file`, `build_project`
 - `search_symbol`, `search_file`, `search_text`, `search_regex`, `search_in_files_by_text`, `search_in_files_by_regex`
 - `get_symbol_info`, `rename_refactoring`, `replace_text_in_file`
 - `execute_run_configuration`, `execute_terminal_command`
 
-### PHP-specific tools
+The same tested session exposed PHP-oriented tools such as:
 
-Recent PhpStorm MCP sessions can also expose PHP-specific capabilities such as:
-
-- `get_inspections`
-- `apply_quick_fix`
 - `get_php_project_config`
 - `get_composer_dependencies`
+- `get_inspections`
+- `apply_quick_fix`
 - `get_structural_patterns`
 - `search_structural`
 - `search_ide_actions`
 - `invoke_ide_action`
 
-### Optional debugger tools
+The same tested session exposed Xdebug-oriented tools such as:
 
-When the environment exposes Xdebug support, recent sessions can include tools such as:
+- `xdebug_start_server`, `xdebug_status`, `xdebug_request`, `xdebug_single_file`, `xdebug_stack`, `xdebug_context`, `xdebug_eval`, `xdebug_property_get`, `xdebug_property_set`, `xdebug_set_breakpoint`, `xdebug_breakpoint_list`, `xdebug_breakpoint_remove`, `xdebug_run`, `xdebug_pause`, `xdebug_step_into`, `xdebug_step_over`, `xdebug_step_out`, `xdebug_stop`, `xdebug_detach`, `xdebug_stop_server`
 
-- `xdebug_start_debugger_session`
-- `xdebug_start_server`
-- `xdebug_status`
-- `xdebug_request`
-- `xdebug_single_file`
-- `xdebug_stack`
-- `xdebug_context`
-- `xdebug_eval`
-- `xdebug_property_get`
-- `xdebug_property_set`
-- `xdebug_set_breakpoint`
-- `xdebug_breakpoint_list`
-- `xdebug_breakpoint_remove`
-- `xdebug_run`
-- `xdebug_pause`
-- `xdebug_step_into`
-- `xdebug_step_over`
-- `xdebug_step_out`
-- `xdebug_stop`
-- `xdebug_detach`
-- `xdebug_stop_server`
+## Optional Capabilities
 
-Some environments also expose generic aliases such as `breakpoint_*`, `context_get`, `property_get`, `property_set`, `stack_get`, and `step_*`.
-
-### Optional database tools
-
-When database tooling is enabled, recent sessions can include tools such as:
+Database tools may appear when database support is enabled and exposed in the MCP session. Examples include:
 
 - `list_database_connections`
 - `test_database_connection`
@@ -98,9 +67,7 @@ When database tooling is enabled, recent sessions can include tools such as:
 - `execute_sql_query`
 - `cancel_sql_query`
 
-### Optional Laravel-aware tools
-
-PhpStorm 2026.1 release notes note built-in PHP Claude Skills and Laravel Idea MCP support. In integrations that expose Laravel-specific MCP capabilities, the session may also contain tools such as:
+Laravel-aware tools may appear in environments where Laravel Idea MCP capabilities are available and exposed. Examples include:
 
 - `laravel_idea_get_routes`
 - `laravel_idea_get_eloquent_model`
@@ -108,19 +75,11 @@ PhpStorm 2026.1 release notes note built-in PHP Claude Skills and Laravel Idea M
 - `laravel_idea_get_blade_component`
 - `laravel_idea_generate_helper_code`
 
-## Why This Repository Still Matters
-
-PhpStorm 2026.1 already ships stronger built-in MCP and agent guidance than earlier releases, including built-in PHP Claude Skills.
-
-This repository remains useful because it is:
-
-- vendor-neutral rather than tied to a single agent product
-- explicit about safer PHP defaults such as inspections, semantic navigation, and refactoring-first edits
-- layered for context economy, so framework and capability overlays are loaded only when needed
-- packaged for Codex installation and maintenance
+Treat database, debugger, and framework-aware tool families as capability overlays. Load the matching overlay only after the project or task proves the need.
 
 ## Practical Guidance
 
-- Trust actual exposed tools first.
-- Use the public docs as a baseline, not as the last word.
-- If a tool you expect is missing, check IDE version, enabled plugins, and allow-list settings such as `idea_mcp_allowed_tools`.
+- Trust the current session's exposed tools first.
+- Use public documentation as a baseline, not as a complete inventory.
+- If a tool you expect is missing, check IDE version, enabled bundled plugins, project setup, and allow-list settings such as `idea_mcp_allowed_tools`.
+- If a documented or observed tool is unavailable, choose the next smallest safe workflow from `playbook.md` and state the fallback.
