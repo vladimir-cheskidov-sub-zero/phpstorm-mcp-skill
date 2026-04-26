@@ -42,21 +42,21 @@ end
 
 def load_invariants(errors)
   config = load_yaml_mapping(CONFIG_PATH, errors)
-  return [] if config.nil?
+  return [[], []] if config.nil?
 
   order = config["order"]
   unless order.is_a?(Array) && order.all? { |id| id.is_a?(String) && !id.empty? }
     errors << "#{CONFIG_PATH} must contain an order array of invariant ids."
-    return []
+    return [[], []]
   end
 
   invariant_map = config["invariants"]
   unless invariant_map.is_a?(Hash)
     errors << "#{CONFIG_PATH} must contain an invariants mapping."
-    return []
+    return [[], []]
   end
 
-  invariants = order.map do |id|
+  invariants = invariant_map.map do |id, raw|
     raw = invariant_map[id]
     unless raw.is_a?(Hash)
       errors << "#{CONFIG_PATH} is missing invariants.#{id}."
@@ -90,7 +90,11 @@ def load_invariants(errors)
     }
   end
 
-  invariants.compact
+  invariant_ids = invariants.compact.map { |invariant| invariant[:id] }
+  missing_order_ids = order - invariant_ids
+  errors << "#{CONFIG_PATH} order references unknown invariant ids: #{missing_order_ids.join(', ')}." unless missing_order_ids.empty?
+
+  [invariants.compact, order]
 end
 
 def locate_ordered_parts(text, parts, start_at = 0)
@@ -151,9 +155,7 @@ def collect_prompt_positions(prompt_text, invariants, label, errors)
   positions
 end
 
-def assert_monotonic_order(label, positions, invariants, errors)
-  ordered_ids = invariants.map { |invariant| invariant[:id] }
-
+def assert_monotonic_order(label, positions, ordered_ids, errors)
   ordered_ids.each_cons(2) do |left, right|
     next if positions[left] < positions[right]
 
@@ -162,11 +164,11 @@ def assert_monotonic_order(label, positions, invariants, errors)
 end
 
 errors = []
-invariants = load_invariants(errors)
+invariants, ordered_ids = load_invariants(errors)
 skill_text = File.read(SKILL_PATH)
 
 skill_positions = collect_skill_positions(skill_text, invariants, errors)
-assert_monotonic_order(SKILL_PATH, skill_positions, invariants, errors) if skill_positions.size == invariants.size
+assert_monotonic_order(SKILL_PATH, skill_positions, ordered_ids, errors) if ordered_ids.all? { |id| skill_positions.key?(id) }
 
 agent_files = Dir.glob(AGENTS_GLOB).sort
 errors << "No agent interface YAML files matched #{AGENTS_GLOB}." if agent_files.empty?
@@ -191,7 +193,7 @@ agent_files.each do |agent_file|
   positions = collect_prompt_positions(prompt, invariants, label, errors)
   next unless errors.empty? || errors.none? { |error| error.start_with?(label) || error.start_with?(agent_file) }
 
-  assert_monotonic_order(label, positions, invariants, errors)
+  assert_monotonic_order(label, positions, ordered_ids, errors) if ordered_ids.all? { |id| positions.key?(id) }
 end
 
 fail_with(errors) unless errors.empty?

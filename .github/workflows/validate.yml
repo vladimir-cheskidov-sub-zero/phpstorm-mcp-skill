@@ -8,12 +8,12 @@ permissions:
   contents: read
 
 jobs:
-  prompt-consistency:
+  repository:
     runs-on: ubuntu-latest
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Verify agent interface prompt consistency
-        run: ruby ./scripts/check-agent-interface-consistency.rb
+      - name: Validate repository
+        run: ruby ./scripts/validate-repository.rb

@@ -30,6 +30,34 @@ invariants:
       - "before `read_file`, `search_text`, or regex"
     prompt_required:
       - "richest PhpStorm semantic answer available for PHP code"
+  inspection_driven_fixing:
+    skill_locator: "Prefer `get_inspections` over ad-hoc guessing."
+    skill_required:
+      - "Prefer `get_inspections` over ad-hoc guessing."
+      - "Use `apply_quick_fix` only after selecting an exact quick fix from `get_inspections`."
+    prompt_required:
+      - "inspection-driven fixes"
+      - "read inspections"
+      - "apply exact quick fixes"
+      - "before guessing"
+  semantic_rename:
+    skill_locator: "Prefer `rename_refactoring` over `replace_text_in_file` for identifiers."
+    skill_required:
+      - "`rename_refactoring`"
+      - "`replace_text_in_file`"
+      - "identifiers"
+    prompt_required:
+      - "identifier changes"
+      - "semantic rename over text replacement"
+  structural_search_migrations:
+    skill_locator: "Prefer `search_structural` over regex when the target is a PHP code shape."
+    skill_required:
+      - "`search_structural`"
+      - "regex"
+      - "PHP code shape"
+    prompt_required:
+      - "Prefer structural search over regex"
+      - "syntax-shaped migrations"
   bounded_mcp_low_level:
     skill_locator: "Prefer lower-level PhpStorm MCP tools such as"
     skill_required:
@@ -47,3 +75,37 @@ invariants:
       - "materially less effective"
     prompt_required:
       - "use non-MCP tooling only when"
+  post_refactor_text_audit:
+    skill_locator: "After semantic refactors, audit strings, templates, route names, service IDs, config keys, and docs with `search_text`."
+    skill_required:
+      - "audit strings"
+      - "templates"
+      - "route names"
+      - "service IDs"
+      - "config keys"
+      - "docs"
+    prompt_required:
+      - "After semantic refactors"
+      - "audit strings"
+      - "templates"
+      - "route names"
+      - "service IDs"
+      - "config keys"
+      - "docs"
+  behavior_validation:
+    skill_locator: "For behavior changes, do not stop at `build_project`"
+    skill_required:
+      - "do not stop at `build_project`"
+      - "`execute_run_configuration`"
+      - "project test path"
+    prompt_required:
+      - "For behavior changes"
+      - "validate beyond build_project"
+      - "tests or run configurations"
+  overlays_on_demand:
+    skill_locator: "Load overlays only when the task or project proves they are needed."
+    skill_required:
+      - "Load overlays only when"
+      - "task or project proves"
+    prompt_required:
+      - "Load framework or capability overlays only after the task proves the need"
