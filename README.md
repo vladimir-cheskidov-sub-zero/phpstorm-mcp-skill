@@ -4,19 +4,20 @@
 
 This repository is for people who want **higher-quality AI agent work on PHP projects**.
 
-The idea is simple: most agents are better at generating code than at understanding a real PHP codebase safely. PhpStorm already knows how to navigate symbols, run inspections, apply quick fixes, perform safe renames, and reason about code structure. Through MCP, an agent can use that same capability instead of guessing from raw text.
+The idea is simple: most agents are better at generating code than at understanding a real PHP codebase safely. PhpStorm already knows how to navigate symbols, infer types, inspect code, trace structure, apply quick fixes, perform safe renames, and reason about framework glue. Through MCP, an agent can use that same capability instead of guessing from raw text.
 
 ## Why This Exists
 
 AI agents often fail on PHP repositories in predictable ways:
 
 - they search text when they need symbol-aware navigation
+- they read files or grep the tree before asking PhpStorm what it already knows semantically
 - they rename identifiers with string replacement
 - they guess at diagnostics instead of reading IDE inspections
 - they use regex for syntax-shaped migrations
 - they stop at editing instead of validating against real project context
 
-This skill pushes the agent toward safer defaults: semantic discovery, inspection-driven fixing, syntax-aware search, disciplined validation, and framework or capability overlays only when they are actually relevant.
+This skill pushes the agent toward safer defaults: semantic-first discovery, inspection-driven fixing, syntax-aware search, disciplined validation, and framework or capability overlays only when they are actually relevant. When low-level search or file reading is still needed, the skill prefers PhpStorm MCP tools first and keeps non-MCP tooling as a fallback.
 
 ## What This Repository Contains
 
@@ -43,6 +44,12 @@ This skill pushes the agent toward safer defaults: semantic discovery, inspectio
 
 - [`phpstorm-mcp-workflows/agents/openai.yaml`](phpstorm-mcp-workflows/agents/openai.yaml)
   A ready-to-register interface for OpenAI-compatible agent setups.
+
+- [`scripts/check-agent-interface-consistency.rb`](scripts/check-agent-interface-consistency.rb)
+  An invariant-based check that keeps agent-interface prompts aligned with the base skill workflow order.
+
+- [`scripts/agent-interface-consistency.yaml`](scripts/agent-interface-consistency.yaml)
+  Structured workflow invariants for validating agent-interface prompts without hard-coding full skill prose into the checker.
 
 - [`codex/install-codex-phpstorm-mcp-workflows.sh`](codex/install-codex-phpstorm-mcp-workflows.sh)
   A Codex-specific installer and updater for copying this skill into the local Codex skills directory.
@@ -74,15 +81,25 @@ This layering is deliberate:
 Instead of treating the repository as plain text, the agent can:
 
 - bootstrap real PHP project context with interpreter, language level, Composer packages, modules, repositories, and run configurations
+- ask PhpStorm the strongest semantic question first for PHP code, including symbol search, inferred type lookup, inspections, structural search, and framework-aware discovery
 - navigate code semantically with symbol search and code insight
 - read PhpStorm inspections and apply exact quick fixes
 - use structural search for repetitive migrations and cleanup
 - use safe refactoring paths instead of brittle replacement-based edits
+- use bounded PhpStorm MCP readers and searchers only after the semantic step has narrowed the target
+- keep shell or non-MCP tooling as a fallback instead of the default path
 - validate behavior with run configurations and project-aware checks
+
+Decision order for PHP work:
+
+1. Semantic and framework-aware PhpStorm MCP tools first.
+2. Lower-level PhpStorm MCP readers and searchers second.
+3. Non-MCP tooling only when the PhpStorm path is unavailable or materially less efficient.
 
 Typical workflows include:
 
 - `search_symbol -> get_symbol_info -> read_file`
+- `get_symbol_info -> search_ide_actions -> invoke_ide_action with active editor/caret context for ExpressionTypeInfo or SliceBackward/SliceForward -> bounded read_file (manual fallback otherwise)`
 - `get_inspections -> apply_quick_fix -> get_inspections -> build_project`
 - `search_symbol -> rename_refactoring -> get_inspections -> build_project`
 - `search_structural -> inspect hits -> minimal safe edit -> get_inspections -> build_project`
@@ -147,8 +164,10 @@ The current skill shape is not just a generic 2026.1 rewrite. Several parts were
 Added or expanded for this build:
 
 - PHP project bootstrap as a first-class default through `get_php_project_config` and `get_composer_dependencies`
+- a stricter tool-choice order: semantic PhpStorm answers first, then low-level PhpStorm MCP tools, then non-MCP fallback only when needed
 - inspection-driven fixing through `get_inspections` and exact `apply_quick_fix` selection
 - structural-search-first migration guidance through `search_structural` and `get_structural_patterns`
+- IDE-native type and data-flow fallback guidance through `ExpressionTypeInfo`, `SliceBackward`, and `SliceForward` via `search_ide_actions` and `invoke_ide_action`
 - IDE-action fallback guidance for refactorings that do not have a dedicated MCP tool, via `search_ide_actions` and `invoke_ide_action`
 - Laravel-aware discovery as an optional overlay for environments where `laravel_idea_*` tools are exposed
 - database and Xdebug workflows as optional capability overlays instead of unconditional base-skill content
@@ -165,6 +184,20 @@ This is why the repository now uses a layered layout: the common high-value PHP 
 5. Keep the base skill loaded by default; open the playbook or a framework/capability overlay only when the task actually needs that detail.
 
 For OpenAI-compatible agent setups, see [`phpstorm-mcp-workflows/agents/openai.yaml`](phpstorm-mcp-workflows/agents/openai.yaml).
+
+## Validation
+
+When you edit the base skill defaults or any agent-interface prompt, run:
+
+```bash
+ruby ./scripts/check-agent-interface-consistency.rb
+```
+
+The check validates the workflow-order invariants that matter for safe PHP work:
+
+- bootstrap project context first on non-trivial PHP tasks
+- semantic PhpStorm answers before low-level PhpStorm MCP reads or searches
+- non-MCP tooling only as fallback
 
 ## Install or Update in Codex
 
@@ -194,9 +227,15 @@ The script always installs the `phpstorm-mcp-workflows` directory from this repo
 
 ```text
 phpstorm-mcp-skill/
+├── .github/
+│   └── workflows/
+│       └── validate.yml
 ├── README.md
 ├── codex/
 │   └── install-codex-phpstorm-mcp-workflows.sh
+├── scripts/
+│   ├── agent-interface-consistency.yaml
+│   └── check-agent-interface-consistency.rb
 └── phpstorm-mcp-workflows/
     ├── SKILL.md
     ├── agents/

@@ -1,0 +1,49 @@
+order:
+  - bootstrap_non_trivial
+  - semantic_first
+  - bounded_mcp_low_level
+  - non_mcp_fallback_only
+
+invariants:
+  bootstrap_non_trivial:
+    skill_locator: "Bootstrap PHP project context first:"
+    skill_required:
+      - "`get_php_project_config`"
+      - "`get_composer_dependencies`"
+      - "`get_project_modules` / `get_repositories`"
+      - "`get_run_configurations`"
+    prompt_required:
+      - "non-trivial PHP tasks"
+      - "bootstrap project context first"
+      - "PHP config"
+      - "Composer dependencies"
+      - "modules and repositories"
+      - "run configurations"
+  semantic_first:
+    skill_locator: "For PHP code, ask the strongest question first:"
+    skill_required:
+      - "framework-aware tools"
+      - "`get_inspections`"
+      - "`search_symbol`"
+      - "`get_symbol_info`"
+      - "`search_structural`"
+      - "before `read_file`, `search_text`, or regex"
+    prompt_required:
+      - "richest PhpStorm semantic answer available for PHP code"
+  bounded_mcp_low_level:
+    skill_locator: "Prefer lower-level PhpStorm MCP tools such as"
+    skill_required:
+      - "`read_file`"
+      - "`search_file`"
+      - "`search_text`"
+      - "`search_regex`"
+      - "similar effort"
+    prompt_required:
+      - "fall back to bounded PhpStorm MCP reads or searches"
+  non_mcp_fallback_only:
+    skill_locator: "Treat external CLI search or read tooling as fallback only"
+    skill_required:
+      - "PhpStorm MCP lacks the capability"
+      - "materially less effective"
+    prompt_required:
+      - "use non-MCP tooling only when"

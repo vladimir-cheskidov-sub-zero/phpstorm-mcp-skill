@@ -1,7 +1,7 @@
 interface:
   display_name: "PhpStorm MCP Workflows"
   short_description: "Use PhpStorm MCP as the source of truth for PHP project context, inspections, search, refactoring, validation, and on-demand overlays"
-  default_prompt: "Use $phpstorm-mcp-workflows to solve this through PhpStorm MCP. Start by reading PHP project context when the task is non-trivial, then prefer semantic navigation, inspections, structural search, safe refactoring, and run-configuration-based validation over plain text edits. Audit strings, templates, and config references after semantic refactors. Load framework or capability overlays only after the task clearly requires them."
+  default_prompt: "Use $phpstorm-mcp-workflows to solve this through PhpStorm MCP. On non-trivial PHP tasks, bootstrap project context first with PHP config, Composer dependencies, modules and repositories, and run configurations. Then start with the richest PhpStorm semantic answer available for PHP code, fall back to bounded PhpStorm MCP reads or searches, and use non-MCP tooling only when the IDE toolset cannot answer efficiently. Audit strings, templates, and config references after semantic refactors. Load framework or capability overlays only after the task clearly requires them."
 
 dependencies:
   tools:

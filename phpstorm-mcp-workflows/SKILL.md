@@ -1,6 +1,6 @@
 ---
 name: phpstorm-mcp-workflows
-description: "Use whenever PhpStorm MCP is available for PHP project context, semantic navigation, inspections, structural search, refactoring, validation, and on-demand framework or capability overlays instead of plain text edits."
+description: "Use whenever PhpStorm MCP is available for PHP project context, semantic-first navigation, inspections, structural search, refactoring, validation, and on-demand overlays before falling back to low-level or external tooling."
 ---
 
 # PhpStorm MCP Workflows
@@ -12,16 +12,21 @@ Use this skill when PhpStorm MCP should be the source of truth for PHP project c
 - Prefer the tools actually exposed in the current session over any memorized inventory.
 - Tool exposure varies by IDE version, enabled plugins, and allow-list settings such as `idea_mcp_allowed_tools`.
 - Start from project context on non-trivial PHP tasks.
+- For PHP code, start with the richest PhpStorm answer available: framework-aware tools, semantic navigation, inspections, structural search, or IDE actions before low-level reads or text search.
+- When semantics are exhausted and low-level access is still needed, prefer PhpStorm MCP readers and searchers over shell commands or raw filesystem tooling when the cost is comparable.
 - Keep the base workflow framework-agnostic and capability-light. Load overlays only when the task or project proves they are needed.
 
 ## Core Defaults
 
 - Bootstrap PHP project context first: `get_php_project_config` -> `get_composer_dependencies` -> `get_project_modules` / `get_repositories` -> `get_run_configurations`.
+- For PHP code, ask the strongest question first: framework-aware tools, `get_inspections`, `search_symbol`, `get_symbol_info`, or `search_structural` before `read_file`, `search_text`, or regex.
 - Prefer semantic tools over text tools for code: `search_symbol` -> `get_symbol_info` -> `read_file`.
+- Prefer lower-level PhpStorm MCP tools such as `read_file`, `search_file`, `search_text`, and `search_regex` over external shell or filesystem tools when both can solve the task with similar effort.
 - Prefer `get_inspections` over ad-hoc guessing.
 - Use `apply_quick_fix` only after selecting an exact quick fix from `get_inspections`.
 - Prefer `rename_refactoring` over `replace_text_in_file` for identifiers.
 - Prefer `search_structural` over regex when the target is a PHP code shape.
+- Treat external CLI search or read tooling as fallback only when PhpStorm MCP lacks the capability or is materially less effective.
 - Inspect representative hits before bulk edits, even when the pattern looks obvious.
 - After semantic refactors, audit strings, templates, route names, service IDs, config keys, and docs with `search_text`.
 - For behavior changes, do not stop at `build_project`; run `execute_run_configuration` or the nearest project test path.
@@ -43,8 +48,16 @@ Use this skill when PhpStorm MCP should be the source of truth for PHP project c
 
 1. `search_symbol`
 2. `get_symbol_info`
-3. `read_file` around the declaration and key usages
+3. `read_file` around the narrowed declaration and key usages
 4. Use `search_text` only for non-code references
+
+### Investigate a type or data-flow question
+
+1. `get_symbol_info`
+2. `get_inspections` if a diagnostic is involved
+3. `search_ide_actions` for `ExpressionTypeInfo`, `SliceBackward`, or `SliceForward` if no dedicated MCP tool answers the question directly
+4. `invoke_ide_action` only when the session already has a reliable editor and caret target at the expression; otherwise treat these IDE actions as manual-only fallback
+5. `read_file` or `search_structural` only after the semantic or IDE-assisted step has narrowed the target
 
 ### Fix an inspection-driven issue
 
@@ -94,6 +107,8 @@ Use the narrowest validation that can still catch the likely failure mode.
 ## Guardrails
 
 - Never text-replace an identifier if `rename_refactoring` can do it.
+- Never start PHP code investigation with text search, regex, or file reads if a semantic or framework-aware PhpStorm path can answer it first.
+- Never bypass equivalent PhpStorm MCP readers or searchers with external shell tooling unless the IDE path is unavailable or materially less effective.
 - Never treat `build_project` as enough validation for behavior changes.
 - Never assume semantic refactoring covers strings, comments, templates, or config text.
 - Never default to regex for a symbol or syntax-shaped problem.
