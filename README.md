@@ -52,7 +52,7 @@ The core defaults are:
 - [`phpstorm-mcp-workflows/references/capabilities/debugging.md`](phpstorm-mcp-workflows/references/capabilities/debugging.md): optional Xdebug/runtime-debugging overlay.
 - [`phpstorm-mcp-workflows/references/capabilities/custom-inspections.md`](phpstorm-mcp-workflows/references/capabilities/custom-inspections.md): optional repeated-migration and custom-inspection overlay.
 - [`codex/install-codex-phpstorm-mcp-workflows.sh`](codex/install-codex-phpstorm-mcp-workflows.sh): Codex installer, updater, and installed-copy verifier.
-- [`scripts/validate-repository.rb`](scripts/validate-repository.rb): offline repository validation used by CI.
+- [`scripts/validate-repository.rb`](scripts/validate-repository.rb): offline repository validation for local checks.
 
 ## Context Model
 
@@ -62,7 +62,7 @@ Use the base skill for ordinary PHP work. Open the playbook for detailed tool se
 
 ## Validation
 
-Run the full offline validation suite before committing changes:
+Run the full offline validation suite locally before committing changes:
 
 ```bash
 ruby ./scripts/validate-repository.rb
