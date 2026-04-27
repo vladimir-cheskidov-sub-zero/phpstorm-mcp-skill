@@ -8,10 +8,21 @@ This reference is for choosing the smallest trustworthy PhpStorm MCP tool for PH
 - Actual availability depends on IDE version, enabled plugins, and the agent-side allow-list such as `idea_mcp_allowed_tools`.
 - Prefer the tools actually exposed in the current MCP session over any remembered list.
 
+## Decision Order
+
+1. Use the richest PhpStorm MCP answer available for PHP code first: framework-aware tools, `get_inspections`, `search_symbol`, `get_symbol_info`, `search_structural`, safe refactorings, or targeted IDE actions.
+2. If the target is already narrowed, use lower-level PhpStorm MCP readers and searchers such as `read_file`, `search_file`, `search_text`, or `search_regex`.
+3. Use non-PhpStorm tooling only as a fallback when MCP cannot answer the question or is materially less efficient for that specific step.
+
+Practical rule:
+
+- If you are about to read files or run text search to discover PHP code structure, stop and ask whether a semantic or framework-aware PhpStorm tool can narrow the scope first.
+
 ## Start Here
 
 - The task is non-trivial PHP work: `get_php_project_config` -> `get_composer_dependencies` -> `get_project_modules` / `get_repositories` -> `get_run_configurations`
 - The target is a symbol: `search_symbol` -> `get_symbol_info` -> `read_file`
+- The question is about type, inferred value, or data flow: `get_symbol_info` -> `search_ide_actions` for `ExpressionTypeInfo`, `SliceBackward`, or `SliceForward` -> `invoke_ide_action` only with usable editor and caret context -> bounded `read_file` or `search_structural`
 - The target is a file path or filename: `search_file` or `find_files_by_name_keyword`
 - The target is a plain text fragment: `search_text`
 - The target is a regex pattern: `search_regex`
@@ -77,8 +88,8 @@ Capability overlays:
 
 ### Read and navigate
 
-- `read_file`: default reader; use slices, ranges, or indentation mode for large files
-- `get_file_text_by_path`: only when the file is short and you want plain text quickly
+- `read_file`: default bounded reader after semantic narrowing; use slices, ranges, or indentation mode for large files
+- `get_file_text_by_path`: only when the file is short, already known, and you want plain text quickly
 - `open_file_in_editor`: only when a human-visible editor state or IDE action context matters
 - `get_all_open_file_paths`: useful only when current editor state matters
 
@@ -92,9 +103,10 @@ Capability overlays:
 ### Search code and symbols
 
 - `search_symbol`: default for code identifiers and declarations
-- `get_symbol_info`: declaration, signature, docs, and inferred type
-- `search_text`: default project-wide text search for strings, config keys, docs, templates, and other non-code references
-- `search_regex`: regex search when semantics do not matter and structural search is not a fit
+- `get_symbol_info`: declaration, signature, docs, and inferred type at a specific position
+- `search_ide_actions` plus `invoke_ide_action`: type and data-flow fallback for IDE-native actions such as `ExpressionTypeInfo`, `SliceBackward`, and `SliceForward` when no dedicated MCP API exists
+- `search_text`: default project-wide text search for strings, config keys, docs, templates, and other non-code references; not the first tool for PHP code discovery
+- `search_regex`: regex search when semantics do not matter, structural search is not a fit, and plain text really is the target
 - `search_in_files_by_text` and `search_in_files_by_regex`: alternatives when directory plus file mask parameters are more convenient than glob paths
 - `search_structural`: syntax-aware search; prefer it over regex for API migrations or repeated code shapes
 - `get_structural_patterns`: use when you want known-working PHP SSR examples before writing a custom pattern
@@ -123,6 +135,14 @@ Capability overlays:
 2. `get_symbol_info`
 3. `read_file` around the declaration and a few key usages
 4. `search_text` only for non-code references
+
+### Investigate a type or data-flow question
+
+1. `get_symbol_info`
+2. `get_inspections` if the question is tied to a warning or error
+3. `search_ide_actions` for `ExpressionTypeInfo`, `SliceBackward`, or `SliceForward`
+4. `invoke_ide_action` only when the session already has a reliable editor and caret target at the expression; otherwise treat these IDE actions as manual-only fallback
+5. `read_file` or `search_structural` only after the semantic or IDE-assisted step has narrowed the target
 
 ### Fix an inspection-driven issue
 
@@ -239,7 +259,9 @@ Practical rule:
 ## Anti-patterns
 
 - Starting with `search_regex` when `search_symbol` or `search_structural` would be safer
+- Starting with `read_file`, `search_text`, or external shell search when `get_inspections`, `search_symbol`, framework-aware tools, or `search_structural` could narrow the target first
 - Using `replace_text_in_file` to rename a symbol
+- Using external CLI search or read commands before equivalent PhpStorm MCP tools without a clear efficiency reason
 - Stopping at `build_project` after a behavior change
 - Ignoring strings, templates, config keys, and docs after a semantic refactor
 - Treating `apply_quick_fix` as a generic substitute for all intention actions
