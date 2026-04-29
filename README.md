@@ -52,7 +52,7 @@ The core defaults are:
 - [`phpstorm-mcp-workflows/references/capabilities/debugging.md`](phpstorm-mcp-workflows/references/capabilities/debugging.md): optional Xdebug/runtime-debugging overlay.
 - [`phpstorm-mcp-workflows/references/capabilities/custom-inspections.md`](phpstorm-mcp-workflows/references/capabilities/custom-inspections.md): optional repeated-migration and custom-inspection overlay.
 - [`phpstorm-mcp-workflows/config/mcp.php.dist`](phpstorm-mcp-workflows/config/mcp.php.dist): template for local PhpStorm MCP endpoint settings.
-- [`phpstorm-mcp-workflows/scripts/lib/mcp_client.php`](phpstorm-mcp-workflows/scripts/lib/mcp_client.php): dependency-free Streamable HTTP MCP client for helper scripts.
+- [`phpstorm-mcp-workflows/scripts/lib/SkillMcpClient.php`](phpstorm-mcp-workflows/scripts/lib/SkillMcpClient.php): dependency-free Streamable HTTP MCP client for helper scripts.
 - [`phpstorm-mcp-workflows/scripts/configure-mcp.sh`](phpstorm-mcp-workflows/scripts/configure-mcp.sh): local MCP config generator.
 - [`phpstorm-mcp-workflows/scripts/mcp-tool.php`](phpstorm-mcp-workflows/scripts/mcp-tool.php): one-off MCP tool caller and exposed-tool lister.
 - [`phpstorm-mcp-workflows/scripts/phpstorm-project-bootstrap.php`](phpstorm-mcp-workflows/scripts/phpstorm-project-bootstrap.php): batched PHP project bootstrap for field work.

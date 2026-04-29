@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-require __DIR__ . '/lib/mcp_client.php';
+require __DIR__ . '/lib/SkillMcpClient.php';
 
 function usage(): void
 {
