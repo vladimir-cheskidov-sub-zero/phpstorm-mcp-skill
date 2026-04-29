@@ -13,6 +13,7 @@ This reference is for choosing the smallest trustworthy PhpStorm MCP tool for PH
 1. Use the richest PhpStorm MCP answer available for PHP code first: framework-aware tools, `get_inspections`, `search_symbol`, `get_symbol_info`, `search_structural`, safe refactorings, or targeted IDE actions.
 2. If the target is already narrowed, use lower-level PhpStorm MCP readers and searchers such as `read_file`, `search_file`, `search_text`, or `search_regex`.
 3. Use non-PhpStorm tooling only as a fallback when MCP cannot answer the question or is materially less efficient for that specific step.
+4. For high-volume repeated work, batch stable MCP sequences through skill scripts and reserve interactive MCP calls for representative samples and exceptions.
 
 Practical rule:
 
@@ -20,7 +21,7 @@ Practical rule:
 
 ## Start Here
 
-- The task is non-trivial PHP work: `get_php_project_config` -> `get_composer_dependencies` -> `get_project_modules` / `get_repositories` -> `get_run_configurations`
+- The task is non-trivial PHP work: prefer `scripts/phpstorm-project-bootstrap.php --project-path <path>`, or call `get_php_project_config` -> `get_composer_dependencies` -> `get_project_modules` / `get_repositories` -> `get_run_configurations`
 - The target is a symbol: `search_symbol` -> `get_symbol_info` -> `read_file`
 - The question is about type, inferred value, or data flow: `get_symbol_info` -> `search_ide_actions` for `ExpressionTypeInfo`, `SliceBackward`, or `SliceForward` -> `invoke_ide_action` only with usable editor and caret context -> bounded `read_file` or `search_structural`
 - The target is a file path or filename: `search_file` or `find_files_by_name_keyword`
@@ -40,12 +41,13 @@ Practical rule:
 
 Use this workflow before making non-trivial edits.
 
-1. `get_php_project_config`
-2. `get_composer_dependencies`
-3. `get_project_modules`
-4. `get_repositories`
-5. `get_run_configurations`
-6. If needed, `list_directory_tree` or `search_file` for entrypoints and key config files
+1. For field batches, run `scripts/phpstorm-project-bootstrap.php --project-path <path>`.
+2. Otherwise call `get_php_project_config`
+3. `get_composer_dependencies`
+4. `get_project_modules`
+5. `get_repositories`
+6. `get_run_configurations`
+7. If needed, `list_directory_tree` or `search_file` for entrypoints and key config files
 
 What this gives you:
 
@@ -199,6 +201,20 @@ Capability overlays:
 6. Re-run inspections on touched files
 7. Build touched files
 8. Run the relevant run configuration or test command
+
+### High-volume MCP script path
+
+Use this when repeated MCP calls are becoming the dominant cost.
+
+1. Run `scripts/configure-mcp.sh <mcp-url>` to create editable server settings in `config/mcp.php`; add `--force` to overwrite an existing config.
+2. Keep `config/mcp.php.dist` as a placeholder template; do not commit machine-specific endpoint values there.
+3. Use `scripts/mcp-tool.php --list-tools` to verify the exposed PhpStorm toolset from the configured endpoint.
+4. Use `scripts/mcp-tool.php --tool <name> --args-json '{...}'` for shell-driven one-off calls.
+5. Use `scripts/phpstorm-project-bootstrap.php` for the standard PHP bootstrap sequence.
+6. Use `scripts/phpstorm-batch-inspections.php` when a known list of touched files needs IDE inspections.
+7. Add a new PHP 7.4-compatible script when a repeated MCP sequence is missing; do not keep paying manual agent cycles for stable boilerplate.
+
+If a helper script exits non-zero, stop that workflow branch immediately, report the original error text, and give the user the narrowest corrective action before retrying. If `config/mcp.php` is missing or still contains placeholders, run `scripts/configure-mcp.sh <mcp-url>` before retrying.
 
 ### Framework-specific investigation
 

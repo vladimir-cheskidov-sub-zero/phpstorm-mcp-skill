@@ -51,8 +51,13 @@ The core defaults are:
 - [`phpstorm-mcp-workflows/references/capabilities/database.md`](phpstorm-mcp-workflows/references/capabilities/database.md): optional database overlay.
 - [`phpstorm-mcp-workflows/references/capabilities/debugging.md`](phpstorm-mcp-workflows/references/capabilities/debugging.md): optional Xdebug/runtime-debugging overlay.
 - [`phpstorm-mcp-workflows/references/capabilities/custom-inspections.md`](phpstorm-mcp-workflows/references/capabilities/custom-inspections.md): optional repeated-migration and custom-inspection overlay.
+- [`phpstorm-mcp-workflows/config/mcp.php.dist`](phpstorm-mcp-workflows/config/mcp.php.dist): template for local PhpStorm MCP endpoint settings.
+- [`phpstorm-mcp-workflows/scripts/lib/SkillMcpClient.php`](phpstorm-mcp-workflows/scripts/lib/SkillMcpClient.php): dependency-free Streamable HTTP MCP client for helper scripts.
+- [`phpstorm-mcp-workflows/scripts/configure-mcp.sh`](phpstorm-mcp-workflows/scripts/configure-mcp.sh): local MCP config generator.
+- [`phpstorm-mcp-workflows/scripts/mcp-tool.php`](phpstorm-mcp-workflows/scripts/mcp-tool.php): one-off MCP tool caller and exposed-tool lister.
+- [`phpstorm-mcp-workflows/scripts/phpstorm-project-bootstrap.php`](phpstorm-mcp-workflows/scripts/phpstorm-project-bootstrap.php): batched PHP project bootstrap for field work.
+- [`phpstorm-mcp-workflows/scripts/phpstorm-batch-inspections.php`](phpstorm-mcp-workflows/scripts/phpstorm-batch-inspections.php): batched `get_inspections` runner for known file lists.
 - [`codex/install-codex-phpstorm-mcp-workflows.sh`](codex/install-codex-phpstorm-mcp-workflows.sh): Codex installer, updater, and installed-copy verifier.
-- [`scripts/validate-repository.rb`](scripts/validate-repository.rb): offline repository validation for local checks.
 
 ## Context Model
 
@@ -60,24 +65,33 @@ The skill is layered for context economy. The base `SKILL.md` carries the common
 
 Use the base skill for ordinary PHP work. Open the playbook for detailed tool selection. Open framework or capability overlays only after project context, user intent, or the exposed MCP toolset proves they are relevant.
 
-## Validation
+## MCP Helper Scripts
 
-Run the full offline validation suite locally before committing changes:
+The skill includes PHP 7.4-compatible helper scripts for stable MCP sequences that would otherwise cost multiple interactive agent/tool cycles. They use the PhpStorm Streamable HTTP MCP endpoint configured in a local `config/mcp.php` file.
+
+Create the local config before using the helper scripts for the first time:
 
 ```bash
-ruby ./scripts/validate-repository.rb
+phpstorm-mcp-workflows/scripts/configure-mcp.sh <phpstorm-mcp-url>
 ```
 
-This validates:
+The command copies `config/mcp.php.dist`, replaces placeholders using the provided PhpStorm MCP URL, and writes `config/mcp.php` with default MCP client settings. If `config/mcp.php` already exists, pass `--force` when you intentionally want to replace the old config:
 
-- Ruby, Bash, and YAML syntax
-- local Markdown links
-- required skill files
-- agent prompt consistency with the base skill
-- negative checker cases for removed or reordered critical behavior
-- installer dry-run, install, update, `--check`, symlink rejection, invalid destination rejection, and rollback
+```bash
+phpstorm-mcp-workflows/scripts/configure-mcp.sh --force <phpstorm-mcp-url>
+```
 
-The GitHub Actions workflow runs the same validation script.
+Use it after installing the skill, after moving to another machine, or whenever PhpStorm exposes MCP on a different endpoint. Keep machine-specific values out of `config/mcp.php.dist`; it is a placeholder template. `config/mcp.php` should be treated as machine-local state, and `.gitignore` excludes newly created copies.
+
+Useful commands:
+
+```bash
+php phpstorm-mcp-workflows/scripts/mcp-tool.php --list-tools
+php phpstorm-mcp-workflows/scripts/phpstorm-project-bootstrap.php --project-path /absolute/path/to/php-project
+php phpstorm-mcp-workflows/scripts/phpstorm-batch-inspections.php --project-path /absolute/path/to/php-project --files-json /absolute/path/to/files.json
+```
+
+Use `phpstorm-mcp-workflows/scripts/mcp-tool.php --tool <name> --args-json '{...}'` for shell-driven one-off calls. If a helper exits non-zero, treat that workflow branch as blocked until the reported config, connection, or tool error is fixed.
 
 ## Install Options
 
@@ -105,7 +119,6 @@ The installer rejects empty, relative, and root destination paths. It also refus
 
 - PhpStorm 2026.1.1
 - Build `PS-261.23567.149`
-- Repository validation is offline and does not require network access.
 
 PhpStorm MCP tool exposure still varies by IDE build, enabled plugins, and allow-list settings such as `idea_mcp_allowed_tools`. The skill therefore treats the tools exposed in the current session as the source of truth.
 
