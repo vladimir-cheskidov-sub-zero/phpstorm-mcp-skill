@@ -1,0 +1,15 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'phpstorm' => [
+        'type' => '__PHPSTORM_MCP_TYPE__',
+        'url' => '__PHPSTORM_MCP_URL__',
+        'enabled' => '__PHPSTORM_MCP_ENABLED__',
+        'protocolVersion' => '__MCP_PROTOCOL_VERSION__',
+        'clientName' => '__MCP_CLIENT_NAME__',
+        'clientVersion' => '__MCP_CLIENT_VERSION__',
+        'timeoutSeconds' => '__MCP_TIMEOUT_SECONDS__',
+    ],
+];

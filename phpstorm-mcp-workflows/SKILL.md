@@ -18,7 +18,7 @@ Use this skill when PhpStorm MCP should be the source of truth for PHP project c
 
 ## Core Defaults
 
-- Bootstrap PHP project context first: `get_php_project_config` -> `get_composer_dependencies` -> `get_project_modules` / `get_repositories` -> `get_run_configurations`.
+- Bootstrap PHP project context first. For repeated field work, prefer `scripts/phpstorm-project-bootstrap.php` to run `get_php_project_config`, `get_composer_dependencies`, `get_project_modules`, `get_repositories`, and `get_run_configurations` in one MCP session.
 - For PHP code, ask the strongest question first: framework-aware tools, `get_inspections`, `search_symbol`, `get_symbol_info`, or `search_structural` before `read_file`, `search_text`, or regex.
 - Prefer semantic tools over text tools for code: `search_symbol` -> `get_symbol_info` -> `read_file`.
 - Prefer lower-level PhpStorm MCP tools such as `read_file`, `search_file`, `search_text`, and `search_regex` over external shell or filesystem tools when both can solve the task with similar effort.
@@ -27,6 +27,10 @@ Use this skill when PhpStorm MCP should be the source of truth for PHP project c
 - Prefer `rename_refactoring` over `replace_text_in_file` for identifiers.
 - Prefer `search_structural` over regex when the target is a PHP code shape.
 - Treat external CLI search or read tooling as fallback only when PhpStorm MCP lacks the capability or is materially less effective.
+- For high-volume batches, use MCP for bootstrap, representative sampling, inspections, and disputed cases rather than every identical occurrence.
+- Keep MCP endpoint settings in `config/mcp.php`; create or overwrite it with `scripts/configure-mcp.sh <mcp-url>` and do not hard-code the PhpStorm stream URL in scripts.
+- When a repeated MCP sequence costs multiple agent cycles, add a PHP 7.4-compatible script under `scripts/` and use it for the current batch.
+- If any helper script exits with an error, stop that execution path immediately, surface the script error, and give concrete remediation steps before continuing.
 - Inspect representative hits before bulk edits, even when the pattern looks obvious.
 - After semantic refactors, audit strings, templates, route names, service IDs, config keys, and docs with `search_text`.
 - For behavior changes, do not stop at `build_project`; run `execute_run_configuration` or the nearest project test path.
@@ -37,12 +41,13 @@ Use this skill when PhpStorm MCP should be the source of truth for PHP project c
 
 ### Bootstrap a PHP project
 
-1. `get_php_project_config`
-2. `get_composer_dependencies`
-3. `get_project_modules` and `get_repositories`
-4. `get_run_configurations`
-5. If needed, `list_directory_tree` or `search_file` for entrypoints and config files
-6. If Composer packages or layout identify a framework, load the matching file under `references/frameworks/`
+1. Prefer `scripts/phpstorm-project-bootstrap.php --project-path <path>` for field work.
+2. Otherwise call `get_php_project_config`
+3. `get_composer_dependencies`
+4. `get_project_modules` and `get_repositories`
+5. `get_run_configurations`
+6. If needed, `list_directory_tree` or `search_file` for entrypoints and config files
+7. If Composer packages or layout identify a framework, load the matching file under `references/frameworks/`
 
 ### Investigate a symbol or code path
 
@@ -83,6 +88,23 @@ Use this skill when PhpStorm MCP should be the source of truth for PHP project c
 3. Make the smallest safe edit: quick fix, targeted replace, or refactor
 4. Re-run inspections and build
 5. Escalate to reusable inspection tooling only when repetition is high
+
+### High-volume field automation
+
+1. Create or overwrite MCP connection settings with `scripts/configure-mcp.sh <mcp-url>`.
+2. Store only concrete local settings in `config/mcp.php`; keep `config/mcp.php.dist` as a placeholder template.
+3. Use `scripts/mcp-tool.php` for one-off direct tool calls from shell scripts.
+4. Use `scripts/phpstorm-project-bootstrap.php` for project bootstrap in one request cycle.
+5. Use `scripts/phpstorm-batch-inspections.php` to run `get_inspections` over a known file list in one MCP session.
+6. If a repeated MCP sequence is missing, add a small PHP 7.4-compatible script in `scripts/` instead of repeating manual tool calls.
+7. Keep scripts dry-run/reporting by default when they can mutate files or influence a batch decision.
+
+### Script failure handling
+
+1. Treat any non-zero exit from `scripts/` helpers as a hard stop for that workflow branch.
+2. Report the original stderr or exception text instead of masking it with a fallback action.
+3. Give the smallest corrective action that can unblock the user, then resume only after that prerequisite is satisfied.
+4. If `config/mcp.php` is missing or contains unresolved placeholders, tell the user to run `scripts/configure-mcp.sh <mcp-url>` before retrying.
 
 ## Escalation Paths
 
